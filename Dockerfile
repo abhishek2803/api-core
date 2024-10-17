@@ -1,5 +1,5 @@
 # Base image for Java
-FROM openjdk:17-jdk-alpine
+FROM adoptium:temurin17
 
 # Set the working directory
 WORKDIR /app
