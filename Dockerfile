@@ -1,5 +1,5 @@
 # Base image for Java
-FROM adoptium:temurin17
+FROM eclipse-temurin:17
 
 # Set the working directory
 WORKDIR /app
