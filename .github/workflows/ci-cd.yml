@@ -1,7 +1,6 @@
 # .github/workflows/ci-cd.yml
 name: CI/CD Pipeline
 
-# Trigger workflow on push to 'main' or 'develop' branches and pull request
 on:
   push:
     branches:
@@ -41,9 +40,13 @@ jobs:
 
       # Step 4: Build the project using Gradle
       - name: Build with Gradle
-        run: ./gradlew build --no-daemon
+        run: ./gradlew clean build --no-daemon
 
-      # Step 5: Run tests to verify the build
+      # Step 5: List files in the build/libs directory for debugging
+      - name: List build/libs directory
+        run: ls -la build/libs
+
+      # Step 6: Run tests to verify the build
       - name: Run tests
         run: ./gradlew test --no-daemon
 
@@ -52,26 +55,28 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    # Only run deploy on pushes to the main branch
     if: github.ref == 'refs/heads/main'
 
     steps:
-      # Step 6: Checkout the code again for deployment
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 7: Log in to Docker Hub using PAT
+      # Step 7: List files in build directory before Docker build (for debugging)
+      - name: List files in build directory before Docker build
+        run: ls -la build/libs
+
+      # Step 8: Log in to Docker Hub using PAT
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # Step 8: Build the Docker image
+      # Step 9: Build the Docker image
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} .
 
-      # Step 9: Tag the Docker image
+      # Step 10: Tag the Docker image
       - name: Tag Docker image
         run: docker tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
 
-      # Step 10: Push the Docker image to Docker Hub
+      # Step 11: Push the Docker image to Docker Hub
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
