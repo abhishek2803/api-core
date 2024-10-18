@@ -42,13 +42,12 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew clean build --no-daemon
 
-      # Step 5: List files in the build/libs directory for debugging
-      - name: List build/libs directory
-        run: ls -la build/libs
-
-      # Step 6: Run tests to verify the build
-      - name: Run tests
-        run: ./gradlew test --no-daemon
+      # Step 5: Upload the built JAR as an artifact for the deploy job
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: apicore-jar
+          path: build/libs/apicore-1.0.0.jar
 
   deploy:
     # This job depends on the build job
@@ -58,25 +57,29 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 7: List files in build directory before Docker build (for debugging)
-      - name: List files in build directory before Docker build
-        run: ls -la build/libs
+      # Step 2: Download the artifact (the JAR file)
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: apicore-jar
+          path: build/libs
 
-      # Step 8: Log in to Docker Hub using PAT
+      # Step 3: Log in to Docker Hub using PAT
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      # Step 9: Build the Docker image
+      # Step 4: Build the Docker image
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} .
 
-      # Step 10: Tag the Docker image
+      # Step 5: Tag the Docker image
       - name: Tag Docker image
         run: docker tag ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
 
-      # Step 11: Push the Docker image to Docker Hub
+      # Step 6: Push the Docker image to Docker Hub
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPOSITORY }}:latest
