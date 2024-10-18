@@ -5,7 +5,7 @@ FROM eclipse-temurin:17
 WORKDIR /app
 
 # Copy the build artifact
-COPY build/libs/apicore*.jar /app/apicore.jar
+COPY build/libs/*.jar /app/apicore.jar
 
 # Run the JAR file
 ENTRYPOINT ["java", "-jar", "/app/apicore.jar"]
